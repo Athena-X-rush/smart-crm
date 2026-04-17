@@ -1,31 +1,73 @@
-const summaryList = [
-  { title: 'New leads', count: '148', text: '22 added this week' },
-  { title: 'Open deals', count: '31', text: '7 need follow-up' },
-  { title: 'Expected payment', count: '$18,400', text: 'for this month' }
-]
-
-const leadRows = [
-  { name: 'Arjun Mehta', company: 'Bright Pixel', status: 'New', owner: 'Riya', value: '$3,200' },
-  { name: 'Sara Khan', company: 'North Wind', status: 'Qualified', owner: 'Aman', value: '$5,600' },
-  { name: 'Daniel Lee', company: 'Blue Harbor', status: 'Proposal', owner: 'Nisha', value: '$8,300' },
-  { name: 'Priya Sharma', company: 'Urban Hive', status: 'Negotiation', owner: 'Riya', value: '$6,900' }
-]
-
-const tasks = [
-  { title: 'Call back Bright Pixel', time: '10:30 AM' },
-  { title: 'Send updated proposal', time: '12:15 PM' },
-  { title: 'Check payment status', time: '2:00 PM' },
-  { title: 'Evening sales review', time: '5:30 PM' }
-]
-
-const updates = [
-  'Bright Pixel moved to proposal stage',
-  'North Wind contact details updated',
-  'Urban Hive meeting shifted to Friday',
-  'Blue Harbor asked for revised pricing'
-]
+import { useEffect, useState } from 'react'
 
 function App() {
+  const [page, setPage] = useState(window.location.hash || '#/')
+  const [leads, setLeads] = useState([])
+  const [search, setSearch] = useState('')
+  const [name, setName] = useState('')
+  const [company, setCompany] = useState('')
+  const [status, setStatus] = useState('New')
+
+  useEffect(() => {
+    if (!window.location.hash) {
+      window.location.hash = '/'
+    }
+
+    function changePage() {
+      setPage(window.location.hash || '#/')
+    }
+
+    window.addEventListener('hashchange', changePage)
+
+    return () => {
+      window.removeEventListener('hashchange', changePage)
+    }
+  }, [])
+
+  function addLead(e) {
+    e.preventDefault()
+
+    if (name.trim() === '' || company.trim() === '') {
+      return
+    }
+
+    const lead = {
+      id: Date.now(),
+      name: name.trim(),
+      company: company.trim(),
+      status: status
+    }
+
+    setLeads([lead, ...leads])
+    setName('')
+    setCompany('')
+    setStatus('New')
+    window.location.hash = '/leads'
+  }
+
+  const filteredLeads = leads.filter((lead) => {
+    const text = (lead.name + ' ' + lead.company + ' ' + lead.status).toLowerCase()
+    return text.includes(search.toLowerCase())
+  })
+
+  let newCount = 0
+  let qualifiedCount = 0
+  let proposalCount = 0
+
+  for (let i = 0; i < leads.length; i++) {
+    if (leads[i].status === 'New') {
+      newCount++
+    }
+
+    if (leads[i].status === 'Qualified') {
+      qualifiedCount++
+    }
+
+    if (leads[i].status === 'Proposal Sent') {
+      proposalCount++
+    }
+  }
+
   return (
     <div className="crm-page">
       <aside className="sidebar">
@@ -38,146 +80,252 @@ function App() {
         </div>
 
         <div className="menu-title">Main</div>
+
         <nav className="nav-list">
-          <a className="active-link" href="/">Dashboard</a>
-          <a href="/">Leads</a>
-          <a href="/">Contacts</a>
-          <a href="/">Deals</a>
-          <a href="/">Tasks</a>
-          <a href="/">Reports</a>
+          <a href="#/" className={page === '#/' ? 'active-link' : ''}>Dashboard</a>
+          <a href="#/leads" className={page === '#/leads' ? 'active-link' : ''}>Leads</a>
+          <a href="#/contacts" className={page === '#/contacts' ? 'active-link' : ''}>Contacts</a>
+          <a href="#/deals" className={page === '#/deals' ? 'active-link' : ''}>Deals</a>
+          <a href="#/tasks" className={page === '#/tasks' ? 'active-link' : ''}>Tasks</a>
+          <a href="#/reports" className={page === '#/reports' ? 'active-link' : ''}>Reports</a>
         </nav>
 
         <div className="target-box">
-          <p>This month target</p>
-          <strong>$75,000</strong>
-          <span>Done so far: $48,900</span>
+          <p>Total leads</p>
+          <strong>{leads.length}</strong>
+          <span>{newCount} new and {qualifiedCount} qualified</span>
         </div>
       </aside>
 
       <main className="content-area">
-        <div className="header-row">
-          <div>
-            <p className="small-text">Dashboard</p>
-            <h2>Welcome back, Mayank</h2>
-            <p className="sub-text">You can check leads, tasks and daily updates from here.</p>
-          </div>
-
-          <div className="header-actions">
-            <input type="text" placeholder="Search leads" />
-            <button type="button">Add lead</button>
-          </div>
-        </div>
-
-        <div className="summary-row">
-          {summaryList.map((item) => (
-            <div className="summary-box" key={item.title}>
-              <p>{item.title}</p>
-              <strong>{item.count}</strong>
-              <span>{item.text}</span>
-            </div>
-          ))}
-          <div className="summary-box summary-box-last">
-            <p>Pending tasks</p>
-            <strong>14</strong>
-            <span>4 overdue today</span>
-          </div>
-        </div>
-
-        <div className="content-grid">
-          <section className="main-block">
-            <div className="box-head">
-              <h3>Deal stages</h3>
-              <a href="/">view all</a>
-            </div>
-
-            <div className="stage-row">
-              <div className="stage-box">
-                <h4>New</h4>
-                <strong>12</strong>
-                <p>$7,800</p>
+        {page === '#/' && (
+          <>
+            <div className="header-row">
+              <div>
+                <p className="small-text">Dashboard</p>
+                <h2>Welcome to Smart CRM</h2>
+                <p className="sub-text">Start by adding leads and keeping the pipeline moving.</p>
               </div>
-              <div className="stage-box">
-                <h4>Qualified</h4>
-                <strong>9</strong>
-                <p>$11,200</p>
-              </div>
-              <div className="stage-box">
-                <h4>Proposal</h4>
-                <strong>6</strong>
-                <p>$16,700</p>
-              </div>
-              <div className="stage-box">
-                <h4>Negotiation</h4>
-                <strong>4</strong>
-                <p>$13,400</p>
+
+              <div className="header-actions">
+                <a className="primary-link-button" href="#/leads">Open leads</a>
               </div>
             </div>
 
-            <div className="table-box">
-              <div className="box-head">
-                <h3>Recent leads</h3>
-                <a href="/">manage</a>
+            <div className="summary-row">
+              <div className="summary-box">
+                <p>Total leads</p>
+                <strong>{leads.length}</strong>
+                <span>All leads added in this app</span>
               </div>
 
-              <div className="table-wrap">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Company</th>
-                      <th>Status</th>
-                      <th>Owner</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {leadRows.map((item) => (
-                      <tr key={item.name}>
-                        <td>{item.name}</td>
-                        <td>{item.company}</td>
-                        <td><span className="status-tag">{item.status}</span></td>
-                        <td>{item.owner}</td>
-                        <td>{item.value}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="summary-box">
+                <p>New leads</p>
+                <strong>{newCount}</strong>
+                <span>Fresh leads to review</span>
+              </div>
+
+              <div className="summary-box">
+                <p>Qualified</p>
+                <strong>{qualifiedCount}</strong>
+                <span>Leads ready for follow-up</span>
+              </div>
+
+              <div className="summary-box summary-box-last">
+                <p>Proposal sent</p>
+                <strong>{proposalCount}</strong>
+                <span>Leads waiting for response</span>
               </div>
             </div>
-          </section>
 
-          <aside className="right-block">
-            <div className="side-box">
-              <div className="box-head">
-                <h3>Today tasks</h3>
-                <a href="/">open</a>
-              </div>
-
-              <div className="task-items">
-                {tasks.map((item) => (
-                  <div className="task-item" key={item.title}>
-                    <div>
-                      <strong>{item.title}</strong>
-                    </div>
-                    <span>{item.time}</span>
+            <div className="content-grid">
+              <section className="main-block">
+                <div className="table-box">
+                  <div className="box-head">
+                    <h3>Recent leads</h3>
+                    <a href="#/leads">manage</a>
                   </div>
-                ))}
+
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Company</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leads.length > 0 ? (
+                          leads.slice(0, 5).map((lead) => (
+                            <tr key={lead.id}>
+                              <td>{lead.name}</td>
+                              <td>{lead.company}</td>
+                              <td><span className="status-tag">{lead.status}</span></td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="3">No leads yet. Add your first one from here.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+
+              <aside className="right-block">
+                <div className="side-box">
+                  <div className="box-head">
+                    <h3>Add lead</h3>
+                  </div>
+
+                  <form className="lead-form" onSubmit={addLead}>
+                    <label>
+                      <span>Name</span>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter lead name"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Company</span>
+                      <input
+                        type="text"
+                        value={company}
+                        onChange={(e) => setCompany(e.target.value)}
+                        placeholder="Enter company name"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Status</span>
+                      <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                        <option>New</option>
+                        <option>Qualified</option>
+                        <option>Proposal Sent</option>
+                      </select>
+                    </label>
+
+                    <button type="submit">Add lead</button>
+                  </form>
+                </div>
+              </aside>
+            </div>
+          </>
+        )}
+
+        {page === '#/leads' && (
+          <>
+            <div className="header-row">
+              <div>
+                <p className="small-text">Leads</p>
+                <h2>Lead management</h2>
+                <p className="sub-text">Add leads, search them, and keep this section updated.</p>
+              </div>
+
+              <div className="header-actions">
+                <input
+                  type="text"
+                  placeholder="Search by name or company"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
               </div>
             </div>
 
-            <div className="side-box">
-              <div className="box-head">
-                <h3>Quick updates</h3>
-              </div>
+            <div className="content-grid">
+              <section className="main-block">
+                <div className="table-box">
+                  <div className="box-head">
+                    <h3>All leads</h3>
+                    <span className="table-count">{filteredLeads.length} shown</span>
+                  </div>
 
-              <ul className="update-list">
-                {updates.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
+                  <div className="table-wrap">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Company</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredLeads.length > 0 ? (
+                          filteredLeads.map((lead) => (
+                            <tr key={lead.id}>
+                              <td>{lead.name}</td>
+                              <td>{lead.company}</td>
+                              <td><span className="status-tag">{lead.status}</span></td>
+                            </tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan="3">No matching leads found.</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </section>
+
+              <aside className="right-block">
+                <div className="side-box">
+                  <div className="box-head">
+                    <h3>Add new lead</h3>
+                  </div>
+
+                  <form className="lead-form" onSubmit={addLead}>
+                    <label>
+                      <span>Name</span>
+                      <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Enter lead name"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Company</span>
+                      <input
+                        type="text"
+                        value={company}
+                        onChange={(e) => setCompany(e.target.value)}
+                        placeholder="Enter company name"
+                      />
+                    </label>
+
+                    <label>
+                      <span>Status</span>
+                      <select value={status} onChange={(e) => setStatus(e.target.value)}>
+                        <option>New</option>
+                        <option>Qualified</option>
+                        <option>Proposal Sent</option>
+                      </select>
+                    </label>
+
+                    <button type="submit">Add lead</button>
+                  </form>
+                </div>
+              </aside>
             </div>
-          </aside>
-        </div>
+          </>
+        )}
+
+        {page !== '#/' && page !== '#/leads' && (
+          <div className="placeholder-page">
+            <p className="small-text">Section</p>
+            <h2>{page.replace('#/', '').charAt(0).toUpperCase() + page.replace('#/', '').slice(1)}</h2>
+            <p className="sub-text">This part can be built next after leads.</p>
+          </div>
+        )}
       </main>
     </div>
   )
